@@ -1,6 +1,18 @@
 import { ETAValue, ETAMenuNode, ETAError } from '@/types/eta';
+import { MOCK_MENU, MOCK_VALUES, MOCK_ERRORS, MOCK_API_VERSION } from './mockData';
 
 const BASE_URL = 'https://pc.bravokilo.cloud';
+
+// Demo mode state
+let demoMode = true; // Default to demo mode since API is behind Cloudflare
+
+export function isDemoMode(): boolean {
+  return demoMode;
+}
+
+export function setDemoMode(enabled: boolean): void {
+  demoMode = enabled;
+}
 
 // Parse XML response to extract value
 function parseValueXML(xmlString: string): ETAValue | null {
@@ -78,6 +90,11 @@ function parseApiVersion(xmlString: string): string | null {
 
 // GET only - Read API version
 export async function getApiVersion(): Promise<string | null> {
+  if (demoMode) {
+    await simulateLatency();
+    return MOCK_API_VERSION;
+  }
+  
   try {
     const response = await fetch(`${BASE_URL}/user/api`);
     if (!response.ok) throw new Error('API not available');
@@ -91,6 +108,11 @@ export async function getApiVersion(): Promise<string | null> {
 
 // GET only - Read menu structure
 export async function getMenu(): Promise<ETAMenuNode[]> {
+  if (demoMode) {
+    await simulateLatency();
+    return MOCK_MENU;
+  }
+  
   try {
     const response = await fetch(`${BASE_URL}/user/menu`);
     if (!response.ok) throw new Error('Menu not available');
@@ -104,6 +126,26 @@ export async function getMenu(): Promise<ETAMenuNode[]> {
 
 // GET only - Read single variable
 export async function getVariable(uri: string): Promise<ETAValue | null> {
+  if (demoMode) {
+    await simulateLatency();
+    const cleanUri = uri.startsWith('/') ? uri : `/${uri}`;
+    const mockValue = MOCK_VALUES[cleanUri];
+    if (mockValue) {
+      // Add slight random variation for realistic feel
+      const numValue = parseFloat(mockValue.strValue);
+      if (!isNaN(numValue) && mockValue.unit === '°C') {
+        const variance = numValue * 0.02; // 2% variance
+        const newValue = numValue + (Math.random() - 0.5) * variance;
+        return {
+          ...mockValue,
+          strValue: newValue.toFixed(mockValue.decPlaces),
+          rawValue: Math.round(newValue * mockValue.scaleFactor),
+        };
+      }
+    }
+    return mockValue || null;
+  }
+  
   try {
     const cleanUri = uri.startsWith('/') ? uri.substring(1) : uri;
     const response = await fetch(`${BASE_URL}/user/var/${cleanUri}`);
@@ -132,6 +174,11 @@ export async function getVariables(uris: string[]): Promise<Map<string, ETAValue
 
 // GET only - Read active errors
 export async function getErrors(): Promise<ETAError[]> {
+  if (demoMode) {
+    await simulateLatency();
+    return MOCK_ERRORS;
+  }
+  
   try {
     const response = await fetch(`${BASE_URL}/user/errors`);
     if (!response.ok) throw new Error('Errors not available');
@@ -145,10 +192,20 @@ export async function getErrors(): Promise<ETAError[]> {
 
 // Check if system is online
 export async function checkConnection(): Promise<boolean> {
+  if (demoMode) {
+    await simulateLatency();
+    return true;
+  }
+  
   try {
     const version = await getApiVersion();
     return version !== null;
   } catch {
     return false;
   }
+}
+
+// Simulate network latency for demo mode
+function simulateLatency(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
 }
