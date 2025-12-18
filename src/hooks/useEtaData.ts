@@ -47,5 +47,6 @@ export function useConnectionStatus() {
     staleTime: 10000,
     refetchInterval: 30000,
     retry: 1,
+    select: (data) => data,
   });
 }

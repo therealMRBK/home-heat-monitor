@@ -48,7 +48,7 @@ export const DEFAULT_URIS: HeatingUri[] = [
 
 const DEFAULT_CONFIG: AppConfig = {
   apiUrl: 'https://pc.bravokilo.cloud',
-  demoMode: true,
+  demoMode: false, // Start with live mode, auto-switch to demo on CORS errors
   uris: DEFAULT_URIS,
 };
 
