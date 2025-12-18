@@ -1,4 +1,5 @@
-import { Flame, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Flame, RefreshCw, Wifi, WifiOff, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '@/lib/utils';
@@ -52,6 +53,12 @@ export function Header({ isOnline, isLoading, lastUpdate, onRefresh }: HeaderPro
               <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
               <span className="hidden sm:inline">Aktualisieren</span>
             </Button>
+
+            <Link to="/settings">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,17 +1,20 @@
 import { ETAValue, ETAMenuNode, ETAError } from '@/types/eta';
 import { MOCK_MENU, MOCK_VALUES, MOCK_ERRORS, MOCK_API_VERSION } from './mockData';
+import { loadConfig } from './configStore';
 
-const BASE_URL = 'https://pc.bravokilo.cloud';
-
-// Demo mode state
-let demoMode = true; // Default to demo mode since API is behind Cloudflare
+// Get config values
+function getBaseUrl(): string {
+  return loadConfig().apiUrl;
+}
 
 export function isDemoMode(): boolean {
-  return demoMode;
+  return loadConfig().demoMode;
 }
 
 export function setDemoMode(enabled: boolean): void {
-  demoMode = enabled;
+  const config = loadConfig();
+  config.demoMode = enabled;
+  localStorage.setItem('eta-heating-config', JSON.stringify(config));
 }
 
 // Parse XML response to extract value
@@ -90,13 +93,13 @@ function parseApiVersion(xmlString: string): string | null {
 
 // GET only - Read API version
 export async function getApiVersion(): Promise<string | null> {
-  if (demoMode) {
+  if (isDemoMode()) {
     await simulateLatency();
     return MOCK_API_VERSION;
   }
   
   try {
-    const response = await fetch(`${BASE_URL}/user/api`);
+    const response = await fetch(`${getBaseUrl()}/user/api`);
     if (!response.ok) throw new Error('API not available');
     const xml = await response.text();
     return parseApiVersion(xml);
@@ -108,13 +111,13 @@ export async function getApiVersion(): Promise<string | null> {
 
 // GET only - Read menu structure
 export async function getMenu(): Promise<ETAMenuNode[]> {
-  if (demoMode) {
+  if (isDemoMode()) {
     await simulateLatency();
     return MOCK_MENU;
   }
   
   try {
-    const response = await fetch(`${BASE_URL}/user/menu`);
+    const response = await fetch(`${getBaseUrl()}/user/menu`);
     if (!response.ok) throw new Error('Menu not available');
     const xml = await response.text();
     return parseMenuXML(xml);
@@ -126,7 +129,7 @@ export async function getMenu(): Promise<ETAMenuNode[]> {
 
 // GET only - Read single variable
 export async function getVariable(uri: string): Promise<ETAValue | null> {
-  if (demoMode) {
+  if (isDemoMode()) {
     await simulateLatency();
     const cleanUri = uri.startsWith('/') ? uri : `/${uri}`;
     const mockValue = MOCK_VALUES[cleanUri];
@@ -148,7 +151,7 @@ export async function getVariable(uri: string): Promise<ETAValue | null> {
   
   try {
     const cleanUri = uri.startsWith('/') ? uri.substring(1) : uri;
-    const response = await fetch(`${BASE_URL}/user/var/${cleanUri}`);
+    const response = await fetch(`${getBaseUrl()}/user/var/${cleanUri}`);
     if (!response.ok) throw new Error('Variable not available');
     const xml = await response.text();
     return parseValueXML(xml);
@@ -174,13 +177,13 @@ export async function getVariables(uris: string[]): Promise<Map<string, ETAValue
 
 // GET only - Read active errors
 export async function getErrors(): Promise<ETAError[]> {
-  if (demoMode) {
+  if (isDemoMode()) {
     await simulateLatency();
     return MOCK_ERRORS;
   }
   
   try {
-    const response = await fetch(`${BASE_URL}/user/errors`);
+    const response = await fetch(`${getBaseUrl()}/user/errors`);
     if (!response.ok) throw new Error('Errors not available');
     const xml = await response.text();
     return parseErrorsXML(xml);
@@ -192,7 +195,7 @@ export async function getErrors(): Promise<ETAError[]> {
 
 // Check if system is online
 export async function checkConnection(): Promise<boolean> {
-  if (demoMode) {
+  if (isDemoMode()) {
     await simulateLatency();
     return true;
   }
