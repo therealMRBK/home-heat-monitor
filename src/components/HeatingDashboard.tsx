@@ -39,7 +39,9 @@ export function HeatingDashboard() {
   const config = useMemo(() => loadConfig(), []);
   const getUri = (id: string) => getUriById(config, id) || '';
 
-  const { data: isOnline, isLoading: connectionLoading } = useConnectionStatus();
+  const { data: connectionStatus, isLoading: connectionLoading } = useConnectionStatus();
+  const isOnline = connectionStatus?.online ?? false;
+  const corsErrorDetected = connectionStatus?.corsError ?? false;
   const { data: menu, isLoading: menuLoading } = useMenu();
   const { data: errors, isLoading: errorsLoading } = useErrors();
 
@@ -102,7 +104,7 @@ export function HeatingDashboard() {
         onRefresh={handleRefresh}
       />
 
-      {isDemoMode() && <DemoModeBanner />}
+      {isDemoMode() && <DemoModeBanner corsErrorDetected={corsErrorDetected} onRetryLive={handleRefresh} />}
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="overview" className="space-y-6">

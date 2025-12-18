@@ -193,18 +193,24 @@ export async function getErrors(): Promise<ETAError[]> {
   }
 }
 
-// Check if system is online
-export async function checkConnection(): Promise<boolean> {
+// Check if system is online - auto-enable demo mode on CORS errors
+export async function checkConnection(): Promise<{ online: boolean; corsError: boolean }> {
   if (isDemoMode()) {
     await simulateLatency();
-    return true;
+    return { online: true, corsError: false };
   }
   
   try {
     const version = await getApiVersion();
-    return version !== null;
-  } catch {
-    return false;
+    return { online: version !== null, corsError: false };
+  } catch (error) {
+    // Auto-enable demo mode on CORS/network errors
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.log('CORS error detected, switching to demo mode');
+      setDemoMode(true);
+      return { online: true, corsError: true };
+    }
+    return { online: false, corsError: false };
   }
 }
 
