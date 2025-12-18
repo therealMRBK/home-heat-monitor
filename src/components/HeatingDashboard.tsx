@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Thermometer, 
   Droplets, 
@@ -29,76 +29,47 @@ import {
   useVariable 
 } from '@/hooks/useEtaData';
 import { isDemoMode } from '@/lib/etaApi';
-
-// Updated URIs based on typical ETA menu structure
-const HEATING_URIS = {
-  // Kessel (Boiler)
-  boilerTemp: '/112/10021/0/0/12000',
-  boilerSetpoint: '/112/10021/0/0/12001',
-  boilerState: '/112/10021/0/0/12006',
-  exhaustTemp: '/112/10021/0/0/12080',
-  
-  // Außentemperatur
-  outdoorTemp: '/112/10021/0/0/12197',
-  
-  // Pufferspeicher (Buffer)
-  bufferTopTemp: '/112/10101/0/0/12000',
-  bufferMiddleTemp: '/112/10101/0/0/12001',
-  bufferBottomTemp: '/112/10101/0/0/12002',
-  bufferCharge: '/112/10101/0/0/12010',
-  
-  // Warmwasser (Hot water)
-  hotWaterTemp: '/112/10111/0/0/12000',
-  hotWaterSetpoint: '/112/10111/0/0/12001',
-  
-  // Heizkreis 1
-  hc1FlowTemp: '/112/10201/0/0/12000',
-  hc1FlowSetpoint: '/112/10201/0/0/12001',
-  hc1RoomTemp: '/112/10201/0/0/12002',
-  hc1RoomSetpoint: '/112/10201/0/0/12003',
-  
-  // Pellet
-  pelletStock: '/112/10021/0/0/12015',
-  pelletConsumption: '/112/10021/0/0/12016',
-  operatingHours: '/112/10021/0/0/12077',
-  burnerStarts: '/112/10021/0/0/12078',
-};
+import { loadConfig, getUriById } from '@/lib/configStore';
 
 export function HeatingDashboard() {
   const queryClient = useQueryClient();
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // Load config and get URIs
+  const config = useMemo(() => loadConfig(), []);
+  const getUri = (id: string) => getUriById(config, id) || '';
 
   const { data: isOnline, isLoading: connectionLoading } = useConnectionStatus();
   const { data: menu, isLoading: menuLoading } = useMenu();
   const { data: errors, isLoading: errorsLoading } = useErrors();
 
   // Kessel
-  const { data: boilerTemp, isLoading: boilerTempLoading } = useVariable(HEATING_URIS.boilerTemp);
-  const { data: boilerSetpoint } = useVariable(HEATING_URIS.boilerSetpoint);
-  const { data: boilerState } = useVariable(HEATING_URIS.boilerState);
-  const { data: exhaustTemp } = useVariable(HEATING_URIS.exhaustTemp);
+  const { data: boilerTemp, isLoading: boilerTempLoading } = useVariable(getUri('boilerTemp'));
+  const { data: boilerSetpoint } = useVariable(getUri('boilerSetpoint'));
+  const { data: boilerState } = useVariable(getUri('boilerState'));
+  const { data: exhaustTemp } = useVariable(getUri('exhaustTemp'));
   
   // Puffer
-  const { data: bufferTopTemp, isLoading: bufferTopLoading } = useVariable(HEATING_URIS.bufferTopTemp);
-  const { data: bufferMiddleTemp } = useVariable(HEATING_URIS.bufferMiddleTemp);
-  const { data: bufferBottomTemp, isLoading: bufferBottomLoading } = useVariable(HEATING_URIS.bufferBottomTemp);
-  const { data: bufferCharge } = useVariable(HEATING_URIS.bufferCharge);
+  const { data: bufferTopTemp, isLoading: bufferTopLoading } = useVariable(getUri('bufferTopTemp'));
+  const { data: bufferMiddleTemp } = useVariable(getUri('bufferMiddleTemp'));
+  const { data: bufferBottomTemp, isLoading: bufferBottomLoading } = useVariable(getUri('bufferBottomTemp'));
+  const { data: bufferCharge } = useVariable(getUri('bufferCharge'));
   
   // Warmwasser & Außen
-  const { data: hotWaterTemp, isLoading: hotWaterLoading } = useVariable(HEATING_URIS.hotWaterTemp);
-  const { data: hotWaterSetpoint } = useVariable(HEATING_URIS.hotWaterSetpoint);
-  const { data: outdoorTemp, isLoading: outdoorLoading } = useVariable(HEATING_URIS.outdoorTemp);
+  const { data: hotWaterTemp, isLoading: hotWaterLoading } = useVariable(getUri('hotWaterTemp'));
+  const { data: hotWaterSetpoint } = useVariable(getUri('hotWaterSetpoint'));
+  const { data: outdoorTemp, isLoading: outdoorLoading } = useVariable(getUri('outdoorTemp'));
   
   // Heizkreis
-  const { data: hc1FlowTemp } = useVariable(HEATING_URIS.hc1FlowTemp);
-  const { data: hc1RoomTemp } = useVariable(HEATING_URIS.hc1RoomTemp);
-  const { data: hc1RoomSetpoint } = useVariable(HEATING_URIS.hc1RoomSetpoint);
+  const { data: hc1FlowTemp } = useVariable(getUri('hc1FlowTemp'));
+  const { data: hc1RoomTemp } = useVariable(getUri('hc1RoomTemp'));
+  const { data: hc1RoomSetpoint } = useVariable(getUri('hc1RoomSetpoint'));
   
   // Pellet & Stats
-  const { data: pelletStock } = useVariable(HEATING_URIS.pelletStock);
-  const { data: pelletConsumption } = useVariable(HEATING_URIS.pelletConsumption);
-  const { data: operatingHours } = useVariable(HEATING_URIS.operatingHours);
-  const { data: burnerStarts } = useVariable(HEATING_URIS.burnerStarts);
+  const { data: pelletStock } = useVariable(getUri('pelletStock'));
+  const { data: pelletConsumption } = useVariable(getUri('pelletConsumption'));
+  const { data: operatingHours } = useVariable(getUri('operatingHours'));
+  const { data: burnerStarts } = useVariable(getUri('burnerStarts'));
 
   useEffect(() => {
     if (isOnline) {
@@ -405,7 +376,7 @@ export function HeatingDashboard() {
                 <ParameterRow label="Verbindungsstatus" value={isOnline ? 'Online' : 'Offline'} />
                 <ParameterRow label="Modus" value={isDemoMode() ? 'Demo-Modus' : 'Live'} />
                 <ParameterRow label="Letzte Aktualisierung" value={lastUpdate?.toLocaleTimeString('de-DE') || '--'} />
-                <ParameterRow label="API Endpoint" value="pc.bravokilo.cloud" />
+                <ParameterRow label="API Endpoint" value={config.apiUrl} />
               </CardContent>
             </Card>
           </TabsContent>
