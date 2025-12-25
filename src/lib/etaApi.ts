@@ -98,15 +98,10 @@ export async function getApiVersion(): Promise<string | null> {
     return MOCK_API_VERSION;
   }
   
-  try {
-    const response = await fetch(`${getBaseUrl()}/user/api`);
-    if (!response.ok) throw new Error('API not available');
-    const xml = await response.text();
-    return parseApiVersion(xml);
-  } catch (error) {
-    console.error('Error fetching API version:', error);
-    return null;
-  }
+  const response = await fetch(`${getBaseUrl()}/user/api`);
+  if (!response.ok) throw new Error('API not available');
+  const xml = await response.text();
+  return parseApiVersion(xml);
 }
 
 // GET only - Read menu structure
@@ -201,16 +196,16 @@ export async function checkConnection(): Promise<{ online: boolean; corsError: b
   }
   
   try {
-    const version = await getApiVersion();
-    return { online: version !== null, corsError: false };
+    const response = await fetch(`${getBaseUrl()}/user/api`);
+    if (!response.ok) {
+      return { online: false, corsError: false };
+    }
+    return { online: true, corsError: false };
   } catch (error) {
     // Auto-enable demo mode on CORS/network errors
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      console.log('CORS error detected, switching to demo mode');
-      setDemoMode(true);
-      return { online: true, corsError: true };
-    }
-    return { online: false, corsError: false };
+    console.log('Connection error detected, switching to demo mode:', error);
+    setDemoMode(true);
+    return { online: true, corsError: true };
   }
 }
 
